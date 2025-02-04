@@ -11,7 +11,6 @@
     <Parameter ID="ConfigurationID" Value="brdkCert_Config1" />
     <Parameter ID="ConfigVersion" Value="1.0.1" />
     <Parameter ID="UserPartitionSize" Value="100" />
-    <Parameter ID="Simulation" Value="1" />
     <Parameter ID="EnableUsbRemoteInstall" Value="1" />
     <Parameter ID="EnableCfRemoteInstall" Value="1" />
     <Parameter ID="TimerDeviceType" Value="SWIOTIMER" />
