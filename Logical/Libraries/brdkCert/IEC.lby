@@ -6,6 +6,7 @@
     <File Description="Exported constants">Constants.var</File>
     <File Description="Exported functions and function blocks">brdkCert.fun</File>
     <File>SendThirdPartyToPanel.st</File>
+    <File>SendListThirdPartyToPanel.st</File>
   </Files>
   <Dependencies>
     <Dependency ObjectName="FileIO" />
