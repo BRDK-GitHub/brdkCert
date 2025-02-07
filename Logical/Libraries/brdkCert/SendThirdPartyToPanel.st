@@ -10,21 +10,6 @@ FUNCTION_BLOCK SendThirdPartyToPanel
 		0:
 			IF Execute THEN	
 				brsmemset(ADR(certBuffer),0,SIZEOF(certBuffer));
-				state := 10;
-			END_IF
-			
-		10:		
-			ArCertExportThirdParty_0.Execute := TRUE;
-			ArCertExportThirdParty_0.Name := CertificateName;
-			ArCertExportThirdParty_0.Data := ADR(certBuffer);
-			ArCertExportThirdParty_0.DataSize := SIZEOF(certBuffer);
-			ArCertExportThirdParty_0();
-			
-			IF ArCertExportThirdParty_0.Error THEN
-				state := 222;
-			ELSIF ArCertExportThirdParty_0.Done AND NOT ArCertExportThirdParty_0.Busy THEN
-				ArCertExportThirdParty_0.Execute := FALSE;
-				ArCertExportThirdParty_0();
 				
 				// Connect to panel usershare
 				cifsParam := CONCAT('/SIP=',PanelEndpoint);
@@ -40,22 +25,16 @@ FUNCTION_BLOCK SendThirdPartyToPanel
 				cifsParam := CONCAT(cifsParam,PanelPassword);
 				
 				IF Simulated THEN
-					fileDeviceName := 'USER';		// Use existing 'USER' file device if simulated
-					state := 30;
-				ELSE
-					fileDeviceName := 'PANEL';		// Create file device 'PANEL' to usershare if real hardware.
+					fileDeviceName := 'USER';			// Use existing 'USER' file device if simulated
 					state := 20;
+				ELSE
+					fileDeviceName := 'PANELCERT';		// Create file device 'PANELCERT' to usershare if real hardware.
+					state := 10;
 				END_IF
-				
-				IF ArCertExportThirdParty_0.NeededDataSize > MAX_CERT_BUFFER_SIZE_IDX THEN
-					// If certificate size is bigger than the buffer we can't store it.
-					BufferTooSmall := TRUE;
-					state := 222;
-				END_IF
-				
+	
 			END_IF
-			
-		20:
+		
+		10:
 			DevLink_0.enable := TRUE;
 			DevLink_0.pDevice := ADR(fileDeviceName);
 			DevLink_0.pParam := ADR(cifsParam);
@@ -65,9 +44,32 @@ FUNCTION_BLOCK SendThirdPartyToPanel
 				handle := DevLink_0.handle;
 				DevLink_0.enable := FALSE;
 				DevLink_0();
-				state := 30;
+				state := 20;
 			ELSIF DevLink_0.status <> ERR_FUB_BUSY THEN
 				state := 222;
+			END_IF	
+			
+		20:		
+			ArCertExportThirdParty_0.Execute := TRUE;
+			ArCertExportThirdParty_0.Name := CertificateName;
+			ArCertExportThirdParty_0.Data := ADR(certBuffer);
+			ArCertExportThirdParty_0.DataSize := SIZEOF(certBuffer);
+			ArCertExportThirdParty_0();
+			
+			IF ArCertExportThirdParty_0.Error THEN
+				state := 222;
+			ELSIF ArCertExportThirdParty_0.Done AND NOT ArCertExportThirdParty_0.Busy THEN
+				ArCertExportThirdParty_0.Execute := FALSE;
+				ArCertExportThirdParty_0();
+				
+				IF ArCertExportThirdParty_0.NeededDataSize > MAX_CERT_BUFFER_SIZE_IDX THEN
+					// If certificate size is bigger than the buffer we can't store it.
+					BufferTooSmall := TRUE;
+					state := 222;
+				ELSE
+					state := 30;
+				END_IF
+				
 			END_IF
 			
 		30:
@@ -160,7 +162,9 @@ FUNCTION_BLOCK SendThirdPartyToPanel
 				DevUnlink_0();
 				state := 90;
 			ELSIF DevUnlink_0.status <> ERR_FUB_BUSY THEN
-				state := 222;
+				DevUnlink_0.enable := FALSE;
+				DevUnlink_0();
+				state := 90;
 			END_IF
 			
 		90:

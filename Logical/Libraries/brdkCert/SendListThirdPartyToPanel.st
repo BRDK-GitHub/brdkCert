@@ -10,6 +10,7 @@ FUNCTION_BLOCK SendListThirdPartyToPanel
 		0:
 			IF Execute THEN	
 				brsmemset(ADR(certBuffer),0,SIZEOF(certBuffer));
+				idx := 0; // Reset idx
 				
 				// Connect to panel usershare
 				cifsParam := CONCAT('/SIP=',PanelEndpoint);
@@ -25,10 +26,10 @@ FUNCTION_BLOCK SendListThirdPartyToPanel
 				cifsParam := CONCAT(cifsParam,PanelPassword);
 				
 				IF Simulated THEN
-					fileDeviceName := 'USER';		// Use existing 'USER' file device if simulated
+					fileDeviceName := 'USER';			// Use existing 'USER' file device if simulated
 					state := 20;
 				ELSE
-					fileDeviceName := 'PANEL';		// Create file device 'PANEL' to usershare if real hardware.
+					fileDeviceName := 'PANELCERT';		// Create file device 'PANELCERT' to usershare if real hardware.
 					state := 10;
 				END_IF
 	
@@ -51,7 +52,7 @@ FUNCTION_BLOCK SendListThirdPartyToPanel
 			
 		20:		
 			ArCertExportThirdParty_0.Execute := TRUE;
-			ArCertExportThirdParty_0.Name := CertificateName;
+			ArCertExportThirdParty_0.Name := CertificateName[idx];
 			ArCertExportThirdParty_0.Data := ADR(certBuffer);
 			ArCertExportThirdParty_0.DataSize := SIZEOF(certBuffer);
 			ArCertExportThirdParty_0();
@@ -81,7 +82,7 @@ FUNCTION_BLOCK SendListThirdPartyToPanel
 			IF DirCreate_0.status = ERR_OK OR DirCreate_0.status = fiERR_DIR_ALREADY_EXIST THEN
 				DirCreate_0.enable := FALSE;
 				DirCreate_0();
-				filePath := CONCAT('cert\',CertificateName);
+				filePath := CONCAT('cert\',CertificateName[idx]);
 				state := 40;
 			ELSIF DirCreate_0.status <> ERR_FUB_BUSY THEN
 				state := 222;
@@ -147,7 +148,23 @@ FUNCTION_BLOCK SendListThirdPartyToPanel
 			IF FileClose_0.status = ERR_OK THEN
 				FileClose_0.enable := FALSE;
 				FileClose_0();
-				state := SEL(Simulated,80,90);
+				
+				// Check next. Do we have more certificates to send?
+				idx := idx + 1;
+				IF idx > MAX_CERT_SEND_IDX THEN
+					// List idx exceeded. Stop to avoid out of bounds.
+					state := SEL(Simulated,80,90);
+				ELSE
+					IF CertificateName[idx] <> '' THEN
+						// Send next certificate
+						brsmemset(ADR(certBuffer),0,SIZEOF(certBuffer));
+						state := 20;
+					ELSE
+						// Done. No more certificates to send
+						state := SEL(Simulated,80,90);
+					END_IF
+				END_IF
+				
 			ELSIF FileClose_0.status <> ERR_FUB_BUSY THEN
 				state := 222;
 			END_IF
@@ -162,7 +179,9 @@ FUNCTION_BLOCK SendListThirdPartyToPanel
 				DevUnlink_0();
 				state := 90;
 			ELSIF DevUnlink_0.status <> ERR_FUB_BUSY THEN
-				state := 222;
+				DevUnlink_0.enable := FALSE;
+				DevUnlink_0();
+				state := 90;
 			END_IF
 			
 		90:

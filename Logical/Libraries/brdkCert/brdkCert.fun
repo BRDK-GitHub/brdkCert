@@ -30,6 +30,8 @@ FUNCTION_BLOCK SendThirdPartyToPanel (*Will send a certificate from Third Party 
 		filePath : STRING[50];
 		fileIdent : UDINT;
 		fileDeviceName : STRING[10];
+		i : UINT;
+		numOfCertificates : USINT;
 	END_VAR
 END_FUNCTION_BLOCK
 
@@ -64,5 +66,6 @@ FUNCTION_BLOCK SendListThirdPartyToPanel (*Will send a certificate from Third Pa
 		filePath : STRING[50];
 		fileIdent : UDINT;
 		fileDeviceName : STRING[10];
+		idx : UINT;
 	END_VAR
 END_FUNCTION_BLOCK
