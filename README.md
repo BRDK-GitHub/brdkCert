@@ -1,5 +1,7 @@
 # brdkCert Library
 
+![image](https://github.com/user-attachments/assets/d707c291-8a7f-4be1-82ee-b231bee9c8cf)
+
 ## Overview
 
 The `brdkCert` library provides functionality to export certificates from Automation Studio to the usershare certificate store on HMI panels. This library is designed to automate the process of exporting and storing certificates on panels, ensuring secure communication between devices.
